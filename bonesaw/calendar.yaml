@@ -1,0 +1,30 @@
+# BONESAW calendar.yaml — macro-events til F-4 catalyst-blackout (SPEC §2 FUSES).
+# Format: UTC-timestamps (ISO 8601, Z). blackout_min i config.yaml styrer vinduet
+# FØR hvert event. Vedligeholdes ugentligt manuelt af Rasmus (SPEC §2).
+#
+# Kilder:
+#   FOMC:    https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+#   CPI/PPI: https://www.bls.gov/schedule/news_release/cpi.htm  /  ppi.htm
+#   NFP:     https://www.bls.gov/schedule/news_release/empsit.htm
+# Husk: BLS-releases kl. 08:30 ET = 12:30 UTC (sommertid) / 13:30 UTC (vintertid).
+# FOMC-beslutning kl. 14:00 ET = 18:00 UTC (sommertid) / 19:00 UTC (vintertid).
+
+events:
+  # FOMC 2026, resterende møder (beslutningsdag = andendagen).
+  # Seedet fra Feds offentliggjorte kalender — VERIFICÉR før LIVE (M5).
+  - name: FOMC rate decision
+    kind: FOMC
+    ts: "2026-07-29T18:00:00Z"
+  - name: FOMC rate decision
+    kind: FOMC
+    ts: "2026-09-16T18:00:00Z"
+  - name: FOMC rate decision
+    kind: FOMC
+    ts: "2026-10-28T18:00:00Z"
+  - name: FOMC rate decision
+    kind: FOMC
+    ts: "2026-12-09T19:00:00Z"   # december = vintertid (EST)
+
+# TODO (Rasmus): tilføj CPI, PPI og NFP fra BLS-skemaerne ovenfor.
+# Bevidst IKKE seedet med gæt — forkerte timestamps i en blackout-fil er værre
+# end manglende (fail-safe: manglende event ses i ugentlig vedligeholdelse).

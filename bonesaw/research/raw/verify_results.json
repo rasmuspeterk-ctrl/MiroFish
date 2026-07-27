@@ -1,0 +1,386 @@
+{
+ "generated_at": "2026-07-27T22:35:35Z",
+ "markets": {
+  "fetched_at": "2026-07-27T22:35:35Z",
+  "assets_5m": {
+   "btc": {
+    "slug": "btc-updown-5m-1785191700",
+    "conditionId": "0x6b94b859d87563a957ef6520e9f39350025e33bdb2c9eac0699c577b78e48b91",
+    "tick": 0.01,
+    "minOrder": 5,
+    "negRisk": false,
+    "feesEnabled": true,
+    "feeType": "crypto_fees_v2",
+    "feeSchedule": {
+     "exponent": 1,
+     "rate": 0.07,
+     "takerOnly": true,
+     "rebateRate": 0.2
+    },
+    "makerBaseFee": 1000,
+    "takerBaseFee": 1000,
+    "rewardsMinSize": 50,
+    "rewardsMaxSpread": 4.5,
+    "restricted": true,
+    "acceptingOrders": true,
+    "acceptingOrdersTimestamp": "2026-07-26T22:51:03Z",
+    "createdAt": "2026-07-26T22:41:33.284182Z",
+    "endDate": "2026-07-27T22:40:00Z",
+    "resolutionSource": "https://data.chain.link/streams/btc-usd",
+    "tieRuleOk": true,
+    "description": "This market will resolve to \"Up\" if the Bitcoin price at the end of the time range specified in the title is greater than or equal to the price at the beginning of that range. Otherwise, it will resolve to \"Down\".\nThe resolution source for this market is information from Chainlink, specifically the BTC/USD data stream available at https://data.chain.link/streams/btc-usd.\nPlease note that this market is about the price according to Chainlink data stream BTC/USD, not according to other sources or spot markets.",
+    "spread": 0.01,
+    "liquidityNum": 27322.3648
+   },
+   "eth": {
+    "slug": "eth-updown-5m-1785191700",
+    "conditionId": "0x476bdff509b5405e3f745fe8775b42b5f9efcf410c9bfa96ed5aee539e7650e7",
+    "tick": 0.01,
+    "minOrder": 5,
+    "negRisk": false,
+    "feesEnabled": true,
+    "feeType": "crypto_fees_v2",
+    "feeSchedule": {
+     "exponent": 1,
+     "rate": 0.07,
+     "takerOnly": true,
+     "rebateRate": 0.2
+    },
+    "makerBaseFee": 1000,
+    "takerBaseFee": 1000,
+    "rewardsMinSize": 50,
+    "rewardsMaxSpread": 4.5,
+    "restricted": true,
+    "acceptingOrders": true,
+    "acceptingOrdersTimestamp": "2026-07-26T22:52:40Z",
+    "createdAt": "2026-07-26T22:41:32.745434Z",
+    "endDate": "2026-07-27T22:40:00Z",
+    "resolutionSource": "https://data.chain.link/streams/eth-usd",
+    "tieRuleOk": true,
+    "description": "This market will resolve to \"Up\" if the Ethereum price at the end of the time range specified in the title is greater than or equal to the price at the beginning of that range. Otherwise, it will resolve to \"Down\".\nThe resolution source for this market is information from Chainlink, specifically the ETH/USD data stream available at https://data.chain.link/streams/eth-usd.\nPlease note that this market is about the price according to Chainlink data stream ETH/USD, not according to other sources or spot markets.",
+    "spread": 0.01,
+    "liquidityNum": 11084.7334
+   },
+   "sol": {
+    "slug": "sol-updown-5m-1785191700",
+    "conditionId": "0x1cb578ce0be9feaeba1ad38fd3a5e6ad02c046cbaf168d4b5b2a209ee68898d0",
+    "tick": 0.01,
+    "minOrder": 5,
+    "negRisk": false,
+    "feesEnabled": true,
+    "feeType": "crypto_fees_v2",
+    "feeSchedule": {
+     "exponent": 1,
+     "rate": 0.07,
+     "takerOnly": true,
+     "rebateRate": 0.2
+    },
+    "makerBaseFee": 1000,
+    "takerBaseFee": 1000,
+    "rewardsMinSize": 50,
+    "rewardsMaxSpread": 4.5,
+    "restricted": true,
+    "acceptingOrders": true,
+    "acceptingOrdersTimestamp": "2026-07-26T22:48:22Z",
+    "createdAt": "2026-07-26T22:41:32.840472Z",
+    "endDate": "2026-07-27T22:40:00Z",
+    "resolutionSource": "https://data.chain.link/streams/sol-usd",
+    "tieRuleOk": true,
+    "description": "This market will resolve to \"Up\" if the Solana price at the end of the time range specified in the title is greater than or equal to the price at the beginning of that range. Otherwise, it will resolve to \"Down\".\nThe resolution source for this market is information from Chainlink, specifically the SOL/USD data stream available at https://data.chain.link/streams/sol-usd.\nPlease note that this market is about the price according to Chainlink data stream SOL/USD, not according to other sources or spot markets.",
+    "spread": 0.01,
+    "liquidityNum": 5058.3528
+   },
+   "xrp": {
+    "slug": "xrp-updown-5m-1785191700",
+    "conditionId": "0x2ee034a9ef2d5e1805d59ec64c39163e0bbb7d31b8461c4647530d5236cea7cf",
+    "tick": 0.01,
+    "minOrder": 5,
+    "negRisk": false,
+    "feesEnabled": true,
+    "feeType": "crypto_fees_v2",
+    "feeSchedule": {
+     "exponent": 1,
+     "rate": 0.07,
+     "takerOnly": true,
+     "rebateRate": 0.2
+    },
+    "makerBaseFee": 1000,
+    "takerBaseFee": 1000,
+    "rewardsMinSize": 50,
+    "rewardsMaxSpread": 4.5,
+    "restricted": true,
+    "acceptingOrders": true,
+    "acceptingOrdersTimestamp": "2026-07-26T22:43:22Z",
+    "createdAt": "2026-07-26T22:41:32.84644Z",
+    "endDate": "2026-07-27T22:40:00Z",
+    "resolutionSource": "https://data.chain.link/streams/xrp-usd",
+    "tieRuleOk": true,
+    "description": "This market will resolve to \"Up\" if the XRP price at the end of the time range specified in the title is greater than or equal to the price at the beginning of that range. Otherwise, it will resolve to \"Down\".\nThe resolution source for this market is information from Chainlink, specifically the XRP/USD data stream available at https://data.chain.link/streams/xrp-usd.\nPlease note that this market is about the price according to Chainlink data stream XRP/USD, not according to other sources or spot markets.",
+    "spread": 0.02,
+    "liquidityNum": 3938.5232
+   },
+   "doge": {
+    "slug": "doge-updown-5m-1785191700",
+    "conditionId": "0xc5adedf9dc24a355dc09b0e6fde216425a6b3ed1b2ff775c755736629b083199",
+    "tick": 0.01,
+    "minOrder": 5,
+    "negRisk": false,
+    "feesEnabled": true,
+    "feeType": "crypto_fees_v2",
+    "feeSchedule": {
+     "exponent": 1,
+     "rate": 0.07,
+     "takerOnly": true,
+     "rebateRate": 0.2
+    },
+    "makerBaseFee": 1000,
+    "takerBaseFee": 1000,
+    "rewardsMinSize": 50,
+    "rewardsMaxSpread": 4.5,
+    "restricted": true,
+    "acceptingOrders": true,
+    "acceptingOrdersTimestamp": "2026-07-26T23:00:46Z",
+    "createdAt": "2026-07-26T22:41:32.74205Z",
+    "endDate": "2026-07-27T22:40:00Z",
+    "resolutionSource": "https://data.chain.link/streams/doge-usd",
+    "tieRuleOk": true,
+    "description": "This market will resolve to \"Up\" if the Dogecoin price at the end of the time range specified in the title is greater than or equal to the price at the beginning of that range. Otherwise, it will resolve to \"Down\".\nThe resolution source for this market is information from Chainlink, specifically the DOGE/USD data stream available at https://data.chain.link/streams/doge-usd.\nPlease note that this market is about the price according to Chainlink data stream DOGE/USD, not according to other sources or spot markets.",
+    "spread": 0.06,
+    "liquidityNum": 2634.447
+   },
+   "bnb": {
+    "slug": "bnb-updown-5m-1785191700",
+    "conditionId": "0xd98af294fd118a4dcad0f351ab8ccf1ed9e42b0c4a38cd081287b2387622c96b",
+    "tick": 0.01,
+    "minOrder": 5,
+    "negRisk": false,
+    "feesEnabled": true,
+    "feeType": "crypto_fees_v2",
+    "feeSchedule": {
+     "exponent": 1,
+     "rate": 0.07,
+     "takerOnly": true,
+     "rebateRate": 0.2
+    },
+    "makerBaseFee": 1000,
+    "takerBaseFee": 1000,
+    "rewardsMinSize": 50,
+    "rewardsMaxSpread": 4.5,
+    "restricted": true,
+    "acceptingOrders": true,
+    "acceptingOrdersTimestamp": "2026-07-26T22:42:42Z",
+    "createdAt": "2026-07-26T22:41:32.945817Z",
+    "endDate": "2026-07-27T22:40:00Z",
+    "resolutionSource": "https://data.chain.link/streams/bnb-usd",
+    "tieRuleOk": true,
+    "description": "This market will resolve to \"Up\" if the BNB price at the end of the time range specified in the title is greater than or equal to the price at the beginning of that range. Otherwise, it will resolve to \"Down\".\nThe resolution source for this market is information from Chainlink, specifically the BNB/USD data stream available at https://data.chain.link/streams/bnb-usd.\nPlease note that this market is about the price according to Chainlink data stream BNB/USD, not according to other sources or spot markets.",
+    "spread": 0.06,
+    "liquidityNum": 2426.6922
+   }
+  },
+  "btc_15m": {
+   "slug": "btc-updown-15m-1785191400",
+   "conditionId": "0xf7b51c6093759314b93fa3b3622ae37358da60de5a34c2fe5bae518b38614aab",
+   "tick": 0.01,
+   "minOrder": 5,
+   "negRisk": false,
+   "feesEnabled": true,
+   "feeType": "crypto_fees_v2",
+   "feeSchedule": {
+    "exponent": 1,
+    "rate": 0.07,
+    "takerOnly": true,
+    "rebateRate": 0.2
+   },
+   "makerBaseFee": 1000,
+   "takerBaseFee": 1000,
+   "rewardsMinSize": 50,
+   "rewardsMaxSpread": 4.5,
+   "restricted": true,
+   "acceptingOrders": true,
+   "acceptingOrdersTimestamp": "2026-07-26T22:42:10Z",
+   "createdAt": "2026-07-26T22:36:37.976962Z",
+   "endDate": "2026-07-27T22:45:00Z",
+   "resolutionSource": "https://data.chain.link/streams/btc-usd",
+   "tieRuleOk": true,
+   "description": "This market will resolve to \"Up\" if the Bitcoin price at the end of the time range specified in the title is greater than or equal to the price at the beginning of that range. Otherwise, it will resolve to \"Down\".\nThe resolution source for this market is information from Chainlink, specifically the BTC/USD data stream available at https://data.chain.link/streams/btc-usd.\nPlease note that this market is about the price according to Chainlink data stream BTC/USD, not according to other sources or spot markets.",
+   "spread": 0.01,
+   "liquidityNum": 5570.5362
+  },
+  "btc_next_window": {
+   "slug": "btc-updown-5m-1785192000",
+   "exists": true,
+   "acceptingOrders": true
+  },
+  "status": "VERIFIED",
+  "notes": [],
+  "found": [
+   "btc",
+   "eth",
+   "sol",
+   "xrp",
+   "doge",
+   "bnb"
+  ],
+  "tie_ok": [
+   "btc",
+   "eth",
+   "sol",
+   "xrp",
+   "doge",
+   "bnb"
+  ]
+ },
+ "clob": {
+  "fetched_at": "2026-07-27T22:35:37Z",
+  "markets": {
+   "btc_5m": {
+    "condition_id": "0x6b94b859d87563a957ef6520e9f39350025e33bdb2c9eac0699c577b78e48b91",
+    "minimum_order_size": 5,
+    "minimum_tick_size": 0.01,
+    "maker_base_fee": 1000,
+    "taker_base_fee": 1000,
+    "neg_risk": false,
+    "accepting_orders": true,
+    "rewards": {
+     "rates": null,
+     "min_size": 50,
+     "max_spread": 4.5
+    },
+    "tokens": [
+     {
+      "outcome": "Up",
+      "token_id": "47811077687791360795224347375803026666342383774383646970102282044141315324251"
+     },
+     {
+      "outcome": "Down",
+      "token_id": "64200375416476981073370720204365425754746270337088146059040508974353829646937"
+     }
+    ]
+   },
+   "btc_15m": {
+    "condition_id": "0xf7b51c6093759314b93fa3b3622ae37358da60de5a34c2fe5bae518b38614aab",
+    "minimum_order_size": 5,
+    "minimum_tick_size": 0.01,
+    "maker_base_fee": 1000,
+    "taker_base_fee": 1000,
+    "neg_risk": false,
+    "accepting_orders": true,
+    "rewards": {
+     "rates": null,
+     "min_size": 50,
+     "max_spread": 4.5
+    },
+    "tokens": [
+     {
+      "outcome": "Up",
+      "token_id": "52912109990386610710504551833048208092422472035650763063146512077362964872547"
+     },
+     {
+      "outcome": "Down",
+      "token_id": "67414530020912737745735887104521004823131522205989239912861012918165285814129"
+     }
+    ]
+   }
+  },
+  "status": "VERIFIED"
+ },
+ "docs": {
+  "fetched_at": "2026-07-27T22:35:37Z",
+  "status": "VERIFIED",
+  "notes": [],
+  "sha256": "1a5816c0d496d739b02435e9ba1c34198575c9bea7ac030f89b0bd15b66601bd",
+  "bytes": 1233772,
+  "fee_formula": "fee = C × feeRate × p × (1 - p)",
+  "fee_category_table": "| Category        | Taker Fee Rate | Maker Fee Rate | Maker Rebate |\n| --------------- | -------------- | -------------- | ------------ |\n| Crypto          | 0.07           | 0              | 20%          |\n| Sports          | 0.05           | 0              | 15%          |\n| Finance         | 0.04           | 0              | 25%          |\n| Politics        | 0.04           | 0              | 25%          |\n| Economics       | 0.05           | 0              | 25%          |\n| Culture         | 0.05           | 0              | 25%          |\n| Weather         | 0.05           | 0              | 25%          |\n| Other / General | 0.05           | 0              | 25%          |\n| Mentions        | 0.04           | 0              | 25%          |\n| Tech            | 0.04           | 0              | 25%          |\n| Geopolitics     | 0              | 0              | —            |",
+  "fee_note_makers": "**Makers are never charged fees.** Only takers pay fees.",
+  "fee_precision": "Fees are rounded to 5 decimal places. The smallest fee charged is 0.00001 pUSD. Anything smaller rounds to zero, so very small trades near the extremes may incur no fee at all.",
+  "maker_rebate_table": "| Category        | Maker Rebate | Distribution Method |\n| --------------- | ------------ | ------------------- |\n| Crypto          | 20%          | Fee-curve weighted  |\n| Sports          | 15%          | Fee-curve weighted  |\n| Finance         | 25%          | Fee-curve weighted  |\n| Politics        | 25%          | Fee-curve weighted  |\n| Economics       | 25%          | Fee-curve weighted  |\n| Culture         | 25%          | Fee-curve weighted  |\n| Weather         | 25%          | Fee-curve weighted  |\n| Other / General | 25%          | Fee-curve weighted  |\n| Mentions        | 25%          | Fee-curve weighted  |\n| Tech            | 25%          | Fee-curve weighted  |\n| Geopolitics     | —            | Fee-free            |",
+  "maker_rebate_payout": "Rebates are paid daily in pUSD, directly to your wallet. A minimum accrued rebate of **$1 pUSD** is required for a payout.",
+  "taker_live_note": "The Taker Rebate Program goes live on **Thursday, May 28, 2026**.",
+  "taker_wv_formula": "wV = Trade Size × (1 − Entry Price) × Category Weight × Bonuses",
+  "taker_weights_table": "| Category                           | Weight                         |\n| ---------------------------------- | ------------------------------ |\n| Sports                             | 1.0                            |\n| Politics, Finance, Mentions, Tech  | 1.3                            |\n| Economics, Culture, Weather, Other | 1.7                            |\n| Crypto                             | 2.3                            |\n| Geopolitics                        | 0 (free to trade, earns no wV) |",
+  "taker_tier_table": "| Tier | Name     | 30-day wV Needed    | Rebate | Level-Up Bonus |\n| :--: | -------- | ------------------- | :----: | :------------: |\n|   0  | None     | Under $2,000       |   0%   |      None      |\n|   1  | Bronze   | $2,000             |   3%   |      $10      |\n|   2  | Silver   | $20,000            |   8%   |      $50      |\n|   3  | Gold     | $200,000           |   18%  |      $250     |\n|   4  | Platinum | $1,000,000         |   32%  |     $1,500    |\n|   5  | Diamond  | $4,000,000         |   44%  |     $7,500    |\n|   6  | Obsidian | $10,000,000 and up |   50%  |    $25,000    |",
+  "rate_limits_block": "## General\n\n| Endpoint              | Limit            |\n| --------------------- | ---------------- |\n| General rate limiting | 15,000 req / 10s |\n| Health check (`/ok`)  | 100 req / 10s    |\n\n***\n\n## Gamma API\n\nBase URL: `https://gamma-api.polymarket.com`\n\n| Endpoint                       | Limit           |\n| ------------------------------ | --------------- |\n| General                        | 4,000 req / 10s |\n| `/events`                      | 500 req / 10s   |\n| `/markets`                     | 300 req / 10s   |\n| `/markets` + `/events` listing | 900 req / 10s   |\n| `/comments`                    | 200 req / 10s   |\n| `/tags`                        | 200 req / 10s   |\n| `/public-search`               | 350 req / 10s   |\n\n***\n\n## Data API\n\nBase URL: `https://data-api.polymarket.com`\n\n| Endpoint             | Limit           |\n| -------------------- | --------------- |\n| General              | 1,000 req / 10s |\n| `/trades`            | 200 req / 10s   |\n| `/positions`         | 150 req / 10s   |\n| `/closed-positions`  | 150 req / 10s   |\n| Health check (`/ok`) | 100 req / 10s   |\n\n***\n\n## CLOB API\n\nBase URL: `https://clob.polymarket.com`\n\n### General\n\n| Endpoint                   | Limit           |\n| -------------------------- | --------------- |\n| General                    | 9,000 req / 10s |\n| `GET` balance allowance    | 200 req / 10s   |\n| `UPDATE` balance allowance | 50 req / 10s    |\n\n### Market Data\n\n| Endpoint          | Limit           |\n| ----------------- | --------------- |\n| `/book`           | 1,500 req / 10s |\n| `/books`          | 500 req / 10s   |\n| `/price`          | 1,500 req / 10s |\n| `/prices`         | 500 req / 10s   |\n| `/midpoint`       | 1,500 req / 10s |\n| `/midpoints`      | 500 req / 10s   |\n| `/prices-history` | 1,000 req / 10s |\n| Market tick size  | 200 req / 10s   |\n\n### Ledger\n\n| Endpoint                                         | Limit         |\n| ------------------------------------------------ | ------------- |\n| `/trades`, `/orders`, `/notifications`, `/order` | 900 req / 10s |\n| `/data/orders`                                   | 500 req / 10s |\n| `/data/trades`                                   | 500 req / 10s |\n| `/notifications`                                 | 125 req / 10s |\n\n### Authentication\n\n| Endpoint          | Limit         |\n| ----------------- | ------------- |\n| API key endpoints | 100 req / 10s |\n\n### Trading\n\nCloudflare applies both **burst** limits (short spikes allowed) and **sustained** limits (longer-term average) to trading endpoints.\n\n| Endpoint                       | Burst Limit     | Sustained Limit      |\n| ------------------------------ | --------------- | -------------------- |\n| `POST /order`                  | 5,000 req / 10s | 120,000 req / 10 min |\n| `DELETE /order`                | 5,000 req / 10s | 120,000 req / 10 min |\n| `POST /orders`                 | 2,000 req / 10s | 21,000 req / 10 min  |\n| `DELETE /orders`               | 2,000 req / 10s | 15,000 req / 10 min  |\n| `DELETE /cancel-all`           | 250 req / 10s   | 6,000 req / 10 min   |\n| `DELETE /cancel-market-orders` | 1,500 req / 10s | 21,000 req / 10 min  |\n\n***",
+  "trl_warning": "Beginning July 24, 2026, the limiter will run in warning mode for two weeks.\n  Requests will continue to be processed during this period. A request that\n  would be rejected after live enforcement begins will include\n  `Poly-RateLimit-Warning: true`. Monitor this header and adjust your request\n  patterns before live enforcement begins. Polymarket will announce when live\n  enforcement begins.",
+  "trl_bucket_table": "| Bucket | Request                        | Token Cost                                    |\n| ------ | ------------------------------ | --------------------------------------------- |\n| Order  | `POST /order`                  | 1                                             |\n| Order  | `POST /orders`                 | Number of orders in a non-empty batch         |\n| Cancel | `DELETE /order`                | 1                                             |\n| Cancel | `DELETE /orders`               | Number of submitted order IDs                 |\n| Cancel | `DELETE /cancel-all`           | 1 plus the number of orders canceled          |\n| Cancel | `DELETE /cancel-market-orders` | 1 plus the number of matching orders canceled |",
+  "trl_tier_table": "| Tier     | 30-Day Volume | Order Rate (tokens/s) | Order Burst (tokens) | Cancel Rate (tokens/s) | Cancel Burst (tokens) | Negative Cancel Balance |\n| -------- | ------------: | --------------------: | -------------------: | ---------------------: | --------------------: | :---------------------: |\n| Standard |             — |                    40 |                   60 |                     80 |                   120 |           Yes           |\n| Copper   |     $30,000+ |                    60 |                   90 |                    120 |                   180 |           Yes           |\n| Bronze   |     $50,000+ |                    80 |                  120 |                    160 |                   240 |           Yes           |\n| Silver   |    $100,000+ |                   200 |                  300 |                    400 |                   600 |           Yes           |\n| Gold     |    $500,000+ |                   400 |                  600 |                    800 |                 1,200 |           Yes           |\n| Platinum |       $2.5M+ |                   450 |                  675 |                    900 |                 1,350 |            No           |\n| Diamond  |         $5M+ |                   525 |                  787 |                  1,050 |                 1,575 |            No           |\n| Elite    |        $10M+ |                   600 |                  900 |                  1,200 |                 1,800 |            No           |",
+  "rtds_symbols_table": "| Source    | Supported symbols                          |\n| --------- | ------------------------------------------ |\n| Binance   | `btcusdt`, `ethusdt`, `solusdt`, `xrpusdt` |\n| Chainlink | `btc/usd`, `eth/usd`, `sol/usd`, `xrp/usd` |",
+  "rtds_subscribe_example": "{\n      \"action\": \"subscribe\",\n      \"subscriptions\": [\n        {\n          \"topic\": \"crypto_prices\",\n          \"type\": \"update\",\n          \"filters\": \"btcusdt,ethusdt\"\n        },\n        {\n          \"topic\": \"crypto_prices_chainlink\",\n          \"type\": \"*\",\n          \"filters\": \"{\\\"symbol\\\":\\\"eth/usd\\\"}\"\n        }\n      ]\n    }",
+  "rtds_heartbeat": true,
+  "clob_ws_limits_documented": false,
+  "perps_ws_limits_table": "| Concurrent connections | IP address | 50 WebSocket connections           |\n| Active subscriptions   | Connection | 100 active subscriptions           |\n| Inbound messages       | IP address | 1,000 messages per minute          |\n| Subscribe message      | Message    | 1 message token                    |\n| Unsubscribe message    | Message    | 1 message token                    |\n| Trade post message     | Message    | Same batch-size weighting as trade |\n| Other post messages    | Message    | 1 message token                    |"
+ },
+ "fees": {
+  "rate": 0.07,
+  "per_share_taker_fee": {
+   "0.3": 0.0147,
+   "0.35": 0.01593,
+   "0.4": 0.0168,
+   "0.45": 0.01733,
+   "0.5": 0.0175,
+   "0.55": 0.01733,
+   "0.6": 0.0168,
+   "0.65": 0.01593,
+   "0.7": 0.0147
+  },
+  "taker_taker_pairs": {
+   "0.50/0.50": {
+    "fee_pair": 0.035,
+    "breakeven_paired_cost": 0.965
+   },
+   "0.60/0.40": {
+    "fee_pair": 0.0336,
+    "breakeven_paired_cost": 0.9664
+   },
+   "0.70/0.30": {
+    "fee_pair": 0.0294,
+    "breakeven_paired_cost": 0.9706
+   },
+   "0.80/0.20": {
+    "fee_pair": 0.0224,
+    "breakeven_paired_cost": 0.9776
+   },
+   "0.90/0.10": {
+    "fee_pair": 0.0126,
+    "breakeven_paired_cost": 0.9874
+   }
+  }
+ },
+ "rtds": {
+  "fetched_at": "2026-07-27T22:35:38Z",
+  "status": "VERIFIED",
+  "notes": [],
+  "listen_s": 30,
+  "counts": {
+   "bnb/usd": 28,
+   "btc/usd": 28,
+   "xrp/usd": 27,
+   "hype/usd": 28,
+   "doge/usd": 28,
+   "eth/usd": 28,
+   "sol/usd": 29
+  },
+  "btc_ticks": 28,
+  "btc_gap_ms_median": 1000,
+  "btc_gap_ms_max": 2000,
+  "missing_symbols": []
+ },
+ "ping": {
+  "fetched_at": "2026-07-27T22:36:08Z",
+  "host": "https://clob.polymarket.com",
+  "n": 15,
+  "status": "DELVIST",
+  "vantage": "dev-container via agent-proxy (IKKE repræsentativ for VPS)",
+  "cf_colo": "IAD",
+  "median_ms": {
+   "namelookup": 0.0,
+   "tcp_connect": 0.3,
+   "tls_appconnect": 120.6,
+   "ttfb": 270.6,
+   "total": 270.7
+  },
+  "tls_minus_tcp_ms": 120.3,
+  "samples_ok": 15
+ }
+}

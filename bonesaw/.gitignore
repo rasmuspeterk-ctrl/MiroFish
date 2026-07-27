@@ -1,0 +1,12 @@
+# hot path-data og hemmeligheder committes aldrig (SPEC §1.4, §6)
+data/*
+!data/.gitkeep
+.env
+__pycache__/
+*.pyc
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.parquet
+# docs-dumpet er 1,2 MB og reproducerbart; kun uddrag committes
+research/raw/llms-full.txt

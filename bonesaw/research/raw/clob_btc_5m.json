@@ -1,0 +1,56 @@
+{
+ "enable_order_book": true,
+ "active": true,
+ "closed": false,
+ "archived": false,
+ "accepting_orders": true,
+ "accepting_order_timestamp": "2026-07-26T22:51:03Z",
+ "minimum_order_size": 5,
+ "minimum_tick_size": 0.01,
+ "condition_id": "0x6b94b859d87563a957ef6520e9f39350025e33bdb2c9eac0699c577b78e48b91",
+ "question_id": "0xecfdfd2403f068037eba855f81523ac3ee4c00309abbbc5c98ab1c64d6838fdc",
+ "question": "Bitcoin Up or Down - July 27, 6:35PM-6:40PM ET",
+ "description": "This market will resolve to \"Up\" if the Bitcoin price at the end of the time range specified in the title is greater than or equal to the price at the beginning of that range. Otherwise, it will resolve to \"Down\".\nThe resolution source for this market is information from Chainlink, specifically the BTC/USD data stream available at https://data.chain.link/streams/btc-usd.\nPlease note that this market is about the price according to Chainlink data stream BTC/USD, not according to other sources or spot markets.",
+ "market_slug": "btc-updown-5m-1785191700",
+ "end_date_iso": "2026-07-27T00:00:00Z",
+ "game_start_time": null,
+ "seconds_delay": 0,
+ "fpmm": "",
+ "maker_base_fee": 1000,
+ "taker_base_fee": 1000,
+ "notifications_enabled": true,
+ "neg_risk": false,
+ "neg_risk_market_id": "",
+ "neg_risk_request_id": "",
+ "icon": "https://polymarket-upload.s3.us-east-2.amazonaws.com/BTC+fullsize.png",
+ "image": "https://polymarket-upload.s3.us-east-2.amazonaws.com/BTC+fullsize.png",
+ "rewards": {
+  "rates": null,
+  "min_size": 50,
+  "max_spread": 4.5
+ },
+ "is_50_50_outcome": false,
+ "tokens": [
+  {
+   "token_id": "47811077687791360795224347375803026666342383774383646970102282044141315324251",
+   "outcome": "Up",
+   "price": 0.505,
+   "winner": false
+  },
+  {
+   "token_id": "64200375416476981073370720204365425754746270337088146059040508974353829646937",
+   "outcome": "Down",
+   "price": 0.495,
+   "winner": false
+  }
+ ],
+ "tags": [
+  "Crypto",
+  "Bitcoin",
+  "Crypto Prices",
+  "Recurring",
+  "Up or Down",
+  "Hide From New",
+  "5M"
+ ]
+}

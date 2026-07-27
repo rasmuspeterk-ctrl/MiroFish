@@ -1,0 +1,38 @@
+# BONESAW v1 — alle tærskler bor her (SPEC §1.5). Ingen magiske tal i kode.
+# Defaults fra SPEC §5; alle kan overstyres.
+
+mode: RECORD                # RECORD | SHADOW | LIVE
+assets_record: [btc, eth, sol, xrp, doge, bnb]
+asset_live: null            # sættes af asset_decision.md ved M4
+enable_15m: false
+
+brain:
+  min_bin_n: 200            # under dette: ingen entry
+  rv_halflife_s: 60
+
+hands:
+  edge_min: 0.02            # 2 cent netto foer entry
+  pairing_edge_min: 0.005
+  pairing_max_s: 60
+  oneside_cap_usdc: 25
+  ratio_min: 1.5            # hans laek: aldrig 1.0-1.5x
+  ratio_max: 8.0
+  paired_cost_max: 1.03     # ideal < 1.00 — se VERIFIED.md §3.3: ex-fee-maal, forudsaetter maker-legging
+  probe_max_usdc: 10
+  endgame_cutoff_s: 20
+  endgame_edge_min: 0.08
+
+fuses:
+  daily_loss_pct: 5
+  oracle_div_bp: 10
+  oracle_div_s: 5
+  market_cap_usdc: 50
+  blackout_min: 10
+  staleness_ms: 1500
+
+redeemer:
+  redeem_poll_s: 60
+  redeem_backlog_max_usdc: 200
+
+execution:
+  latency_penalty_ms: [250, 500]   # shadow-straf, interval
