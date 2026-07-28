@@ -23,7 +23,7 @@ from .base import WsFeed, loads_or_none
 log = structlog.get_logger("f3")
 
 
-def _lookup_tokens_sync(gamma_url: str, slug: str, timeout: float = 8.0) -> list[str]:
+def _lookup_tokens_sync(gamma_url: str, slug: str, timeout: float = 5.0) -> list[str]:
     req = urllib.request.Request(
         f"{gamma_url}/markets?slug={slug}",
         headers={"User-Agent": "bonesaw-recorder/1.0", "Accept": "application/json"})

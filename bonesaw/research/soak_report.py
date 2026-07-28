@@ -88,6 +88,12 @@ def main() -> int:
         return 1
     all_ts = np.concatenate(list(events.values()))
     span = (float(all_ts.min()), float(all_ts.max()))
+    # kontrolleret nedlukning: cap måle-vinduet ved SIDSTE recorder_stopping,
+    # så teardown-halen ikke tælles som feed-gap (downtime mellem genstarter
+    # midt i en soak tælles stadig — kun den afsluttende hale undtages)
+    stopping = [e["ts_wall"] for e in special["sys"] if e.get("type") == "recorder_stopping"]
+    if stopping and span[1] - max(stopping) < 60:
+        span = (span[0], float(max(stopping)))
     span_s = span[1] - span[0]
     stale = cfg.feeds.stale_gap_s.model_dump()
 

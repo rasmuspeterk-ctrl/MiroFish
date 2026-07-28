@@ -127,12 +127,17 @@ async def run_record(cfg: Config, duration_s: float | None) -> None:
     except asyncio.TimeoutError:
         pass
     log.info("stopper")
+    # stop-tidspunktet markeres FØR teardown: soak-rapporten capper gap-målingen
+    # her, så nedluknings-halen ikke tæller som feed-stilhed
+    writer.put("sys", {"type": "recorder_stopping"})
     f1.stop()
     f2.stop()
     f3.stop()
     for t in tasks:
         t.cancel()
-    await asyncio.gather(*tasks, return_exceptions=True)
+    # bounded teardown: et token-opslag fanget i to_thread kan ikke afbrydes;
+    # vent kort og lad daemon-tråde dø med processen i stedet for at hænge
+    await asyncio.wait(tasks, timeout=5)
     writer.put("sys", {"type": "recorder_stop", "dropped": writer.dropped,
                        "dropped_disk": writer.dropped_disk})
     writer.stop()
