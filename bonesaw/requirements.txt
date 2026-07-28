@@ -1,0 +1,10 @@
+# BONESAW runtime-dependencies — kun SPEC §3-stacken + én begrundet tilføjelse.
+websockets>=12
+pyarrow>=15
+pydantic>=2
+structlog>=24
+numpy>=1.26
+# PyYAML er ikke navngivet i §3, men config.yaml (SPEC §1.5/§5) kræver en
+# YAML-parser — eksplicit begrundelse jf. §3's dependency-regel.
+PyYAML>=6
+# M2+: pandas, scikit-learn (isotonic), py-clob-client tilføjes når de bruges.
