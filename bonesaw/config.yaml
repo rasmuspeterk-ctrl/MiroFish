@@ -40,10 +40,11 @@ execution:
 recorder:
   data_dir: data
   sqlite_file: data/recorder.sqlite
-  flush_ms: 250
-  batch_max: 500
-  queue_max: 50000            # fejlsikker: overloeb droppes+taelles, blokerer aldrig
+  flush_ms: 200
+  batch_max: 2000             # f2/bookTicker alene er ~1,5k msg/s — batches skal foelge med
+  queue_max: 200000           # fejlsikker: overloeb droppes+taelles, blokerer aldrig
   rotate_check_s: 20
+  rotate_chunk_rows: 100000   # rotation streames i chunks i egen traad
   disk_min_free_gb: 5         # SPEC §2: stop ved <5 GB fri
   disk_resume_free_gb: 6
   disk_check_s: 30

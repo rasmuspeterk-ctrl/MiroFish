@@ -60,10 +60,11 @@ class ExecutionCfg(BaseModel):
 class RecorderCfg(BaseModel):
     data_dir: str = "data"
     sqlite_file: str = "data/recorder.sqlite"
-    flush_ms: int = 250
-    batch_max: int = 500
-    queue_max: int = 50_000          # fejlsikker: hot path blokerer aldrig; overloeb droppes + taelles
+    flush_ms: int = 200
+    batch_max: int = 2000
+    queue_max: int = 200_000         # fejlsikker: hot path blokerer aldrig; overloeb droppes + taelles
     rotate_check_s: int = 20
+    rotate_chunk_rows: int = 100_000
     disk_min_free_gb: float = 5.0    # SPEC §2 RECORDER: stop ved <5 GB fri
     disk_resume_free_gb: float = 6.0  # hysterese for genoptagelse
     disk_check_s: int = 30

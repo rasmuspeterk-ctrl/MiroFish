@@ -79,6 +79,7 @@ async def run_record(cfg: Config, duration_s: float | None) -> None:
         PROJECT_ROOT / cfg.recorder.sqlite_file, parquet_dir,
         flush_ms=cfg.recorder.flush_ms, batch_max=cfg.recorder.batch_max,
         queue_max=cfg.recorder.queue_max, rotate_check_s=cfg.recorder.rotate_check_s,
+        rotate_chunk_rows=cfg.recorder.rotate_chunk_rows,
         disk_min_free_gb=cfg.recorder.disk_min_free_gb,
         disk_resume_free_gb=cfg.recorder.disk_resume_free_gb,
         disk_check_s=cfg.recorder.disk_check_s)

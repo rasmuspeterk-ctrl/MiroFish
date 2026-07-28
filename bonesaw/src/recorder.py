@@ -52,8 +52,9 @@ class EventWriter:
     """Trådsikker skriver. put() er ikke-blokerende og kaldes fra event-loopet."""
 
     def __init__(self, sqlite_file: str | Path, parquet_dir: str | Path, *,
-                 flush_ms: int = 250, batch_max: int = 500, queue_max: int = 50_000,
-                 rotate_check_s: int = 20, disk_min_free_gb: float = 5.0,
+                 flush_ms: int = 200, batch_max: int = 2000, queue_max: int = 200_000,
+                 rotate_check_s: int = 20, rotate_chunk_rows: int = 100_000,
+                 disk_min_free_gb: float = 5.0,
                  disk_resume_free_gb: float = 6.0, disk_check_s: int = 30,
                  on_rotate=None) -> None:
         self.sqlite_file = Path(sqlite_file)
@@ -61,6 +62,7 @@ class EventWriter:
         self.flush_ms = flush_ms
         self.batch_max = batch_max
         self.rotate_check_s = rotate_check_s
+        self.rotate_chunk_rows = rotate_chunk_rows
         self.disk_min_free_gb = disk_min_free_gb
         self.disk_resume_free_gb = disk_resume_free_gb
         self.disk_check_s = disk_check_s
@@ -70,9 +72,12 @@ class EventWriter:
         self.disk_halted = False
         self.dropped_disk = 0
         self._stop = threading.Event()
+        # rotation koerer i EGEN traad med EGEN forbindelse: en times-rotation
+        # (millioner raekker ved f2-tempo) maa aldrig stalle hot path-skriveren.
         self._thread = threading.Thread(target=self._run, name="event-writer", daemon=True)
+        self._rot_thread = threading.Thread(target=self._rotation_loop,
+                                            name="event-rotator", daemon=True)
         self._last_disk_check = 0.0
-        self._last_rotate_check = 0.0
 
     # ---------------------------------------------------------------- API
 
@@ -90,10 +95,12 @@ class EventWriter:
 
     def start(self) -> None:
         self._thread.start()
+        self._rot_thread.start()
 
-    def stop(self, timeout: float = 15.0) -> None:
+    def stop(self, timeout: float = 30.0) -> None:
         self._stop.set()
         self._thread.join(timeout=timeout)
+        self._rot_thread.join(timeout=timeout)
 
     # ---------------------------------------------------------------- intern
 
@@ -103,6 +110,7 @@ class EventWriter:
         con.executescript(SCHEMA)
         con.execute("PRAGMA journal_mode=WAL")
         con.execute("PRAGMA synchronous=NORMAL")
+        con.execute("PRAGMA busy_timeout=5000")  # writer/rotator deler WAL-fil
         return con
 
     def _run(self) -> None:
@@ -131,13 +139,16 @@ class EventWriter:
             if now - self._last_disk_check >= self.disk_check_s:
                 self._last_disk_check = now
                 self._disk_guard(con)
-            if now - self._last_rotate_check >= self.rotate_check_s:
-                self._last_rotate_check = now
-                try:
-                    self.rotate(con)
-                except Exception as e:  # rotation maa aldrig vaelte skriveren
-                    log.error("rotation_fejl", error=str(e))
         con.commit()
+        con.close()
+
+    def _rotation_loop(self) -> None:
+        con = self._connect()
+        while not self._stop.wait(timeout=self.rotate_check_s):
+            try:
+                self.rotate(con)
+            except Exception as e:  # rotation maa aldrig vaelte recorderen
+                log.error("rotation_fejl", error=str(e))
         con.close()
 
     def _disk_guard(self, con: sqlite3.Connection) -> None:
@@ -184,40 +195,58 @@ class EventWriter:
         return all_stats
 
     def _rotate_hour(self, con: sqlite3.Connection, hour_ts: int) -> list[tuple]:
+        """Chunked streaming: SELECT-chunk → parquet-row-group → DELETE-chunk.
+
+        Holder RAM bunden (chunk-størrelse) og WAL-låsen kort per chunk, så
+        writer-tråden kun venter millisekunder ad gangen (busy_timeout).
+        """
         import pyarrow as pa
         import pyarrow.parquet as pq
 
-        sel = con.execute(
-            "SELECT ts_mono, ts_wall, source, payload FROM events "
-            "WHERE ts_wall >= ? AND ts_wall < ? ORDER BY id",
-            (hour_ts, hour_ts + 3600)).fetchall()
-        if not sel:
-            return []
         day = time.strftime("%Y-%m-%d", time.gmtime(hour_ts))
         hh = time.strftime("%H", time.gmtime(hour_ts))
         out_dir = self.parquet_dir / day
         out_dir.mkdir(parents=True, exist_ok=True)
         out = out_dir / f"events_{day}_{hh}.parquet"
-        table = pa.table({
-            "ts_mono": pa.array([r[0] for r in sel], pa.float64()),
-            "ts_wall": pa.array([r[1] for r in sel], pa.float64()),
-            "source": pa.array([r[2] for r in sel], pa.string()),
-            "payload": pa.array([r[3] for r in sel], pa.string()),
-        })
-        pq.write_table(table, out, compression="zstd")
+        writer: pq.ParquetWriter | None = None
         stats: dict[str, list[int]] = {}
-        for _, _, source, payload in sel:
-            s = stats.setdefault(source, [0, 0])
-            s[0] += 1
-            s[1] += len(payload)
+        total = 0
+        try:
+            while True:
+                sel = con.execute(
+                    "SELECT id, ts_mono, ts_wall, source, payload FROM events "
+                    "WHERE ts_wall >= ? AND ts_wall < ? ORDER BY id LIMIT ?",
+                    (hour_ts, hour_ts + 3600, self.rotate_chunk_rows)).fetchall()
+                if not sel:
+                    break
+                table = pa.table({
+                    "ts_mono": pa.array([r[1] for r in sel], pa.float64()),
+                    "ts_wall": pa.array([r[2] for r in sel], pa.float64()),
+                    "source": pa.array([r[3] for r in sel], pa.string()),
+                    "payload": pa.array([r[4] for r in sel], pa.string()),
+                })
+                if writer is None:
+                    writer = pq.ParquetWriter(out, table.schema, compression="zstd")
+                writer.write_table(table)
+                for _, _, _, source, payload in sel:
+                    s = stats.setdefault(source, [0, 0])
+                    s[0] += 1
+                    s[1] += len(payload)
+                total += len(sel)
+                con.execute("DELETE FROM events WHERE id <= ? AND ts_wall >= ? AND ts_wall < ?",
+                            (sel[-1][0], hour_ts, hour_ts + 3600))
+                con.commit()
+        finally:
+            if writer is not None:
+                writer.close()
+        if not total:
+            return []
         stat_rows = [(hour_ts, src, n, b) for src, (n, b) in sorted(stats.items())]
         con.executemany(
             "INSERT OR REPLACE INTO hourly_stats (hour_ts, source, n, bytes) VALUES (?,?,?,?)",
             stat_rows)
-        con.execute("DELETE FROM events WHERE ts_wall >= ? AND ts_wall < ?",
-                    (hour_ts, hour_ts + 3600))
         con.commit()
-        log.info("roteret", hour=f"{day}T{hh}Z", rows=len(sel), file=str(out))
+        log.info("roteret", hour=f"{day}T{hh}Z", rows=total, file=str(out))
         return stat_rows
 
 
