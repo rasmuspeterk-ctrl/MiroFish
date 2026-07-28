@@ -56,8 +56,9 @@ feeds:
   f1_url: wss://ws-live-data.polymarket.com
   f1_topic: crypto_prices_chainlink
   f1_ping_s: 5                # RTDS app-heartbeat (VERIFIED.md §4.3)
-  s_open_gap_s: 2.0           # SPEC §2 F1 gap-regel: [boundary, boundary+2s]
-  s_open_grace_ms: 500
+  s_open_gap_s: 2.0           # SPEC §2 F1 gap-regel: [boundary, boundary+2s] (ORACLE-ts)
+  s_open_grace_ms: 3000       # vaeg-urs-deadline = boundary+gap+grace; RTDS-leveringslag
+                              # maalt (smoke): median 1,6s / p99 2,6s / maks 3,0s → 3s grace
   f2_url: wss://fstream.binance.com/stream
   f2_streams: [bookTicker, aggTrade, forceOrder, depth@100ms]
   f3_url: wss://ws-subscriptions-clob.polymarket.com/ws/market

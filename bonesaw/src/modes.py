@@ -83,8 +83,10 @@ class FeedsCfg(BaseModel):
     f1_url: str = "wss://ws-live-data.polymarket.com"
     f1_topic: str = "crypto_prices_chainlink"
     f1_ping_s: float = 5.0            # RTDS app-heartbeat (VERIFIED.md §4.3)
-    s_open_gap_s: float = 2.0         # SPEC §2 F1 gap-regel: [boundary, boundary+2s]
-    s_open_grace_ms: int = 500        # vaeg-urs-slack foer UNPRICEABLE afgoeres
+    s_open_gap_s: float = 2.0         # SPEC §2 F1 gap-regel: [boundary, boundary+2s] (oracle-ts)
+    s_open_grace_ms: int = 3000       # vaeg-urs-slack for LEVERING foer UNPRICEABLE afgoeres;
+                                      # reglen selv er uaendret — kun afgoerelsen venter paa
+                                      # relay-lag (maalt p99 ~2,6s fra containeren)
     f2_url: str = "wss://fstream.binance.com/stream"
     f2_streams: list[str] = Field(
         default_factory=lambda: ["bookTicker", "aggTrade", "forceOrder", "depth@100ms"])
