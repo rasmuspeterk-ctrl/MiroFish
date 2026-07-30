@@ -90,19 +90,22 @@ class F3Manager:
         out: dict[str, list[str]] = {}
         for a in self.assets:
             slug = clock.slug(a, period, ts)
-            for attempt in (1, 2):
+            last_err = None
+            for attempt in (1, 2, 3):
                 try:
                     toks = await asyncio.to_thread(
                         _lookup_tokens_sync, self.cfg.gamma_url, slug)
-                    if toks:
+                    if toks:  # AUDIT-fix: tomt svar retries også — og logges
                         out[a] = toks
-                    break
+                        break
+                    last_err = "tomt svar"
                 except Exception as e:
-                    if attempt == 2:
-                        self.writer.put("sys", {"type": "token_lookup_fail",
-                                                "slug": slug, "error": str(e)[:200]})
-                    else:
-                        await asyncio.sleep(1.0)
+                    last_err = str(e)[:200]
+                if attempt < 3:
+                    await asyncio.sleep(1.0)
+            if a not in out:
+                self.writer.put("sys", {"type": "token_lookup_fail",
+                                        "slug": slug, "error": last_err})
         return out
 
     async def _spawn_window(self, period: int, ts: int) -> None:
@@ -118,19 +121,29 @@ class F3Manager:
         t.add_done_callback(self._tasks.discard)
 
     async def run(self) -> None:
-        # nuvaerende vindue(r) straks
-        for period in self.periods:
-            await self._spawn_window(period, clock.window_ts(period))
+        # AUDIT-fix (critical + major): én uafhængig løkke PER periode med
+        # eksplicit target-boundary. Den gamle min()-multiplex kunne (a) aldrig
+        # vælge 15m-perioden ved sammenfaldende boundaries og (b) springe hele
+        # vinduer over hvis token-opslag åd forspringet. Sen spawn > intet
+        # vindue; kun vinduer der allerede er UDLØBET springes over — med log.
+        await asyncio.gather(*(self._run_period(p) for p in self.periods))
+
+    async def _run_period(self, period: int) -> None:
+        await self._spawn_window(period, clock.window_ts(period))  # igangværende vindue
+        target = clock.next_boundary(period)
         while True:
-            waits = [(clock.next_boundary(p) - self.cfg.f3_connect_lead_s - time.time(), p)
-                     for p in self.periods]
-            wait_s, period = min(waits)
+            wait_s = target - self.cfg.f3_connect_lead_s - time.time()
             if wait_s > 0:
                 await asyncio.sleep(wait_s)
-            boundary = clock.next_boundary(period)
-            await self._spawn_window(period, boundary)
-            # sov forbi boundary saa naeste iteration sigter paa det NAESTE vindue
-            await asyncio.sleep(max(0.0, boundary - time.time()) + 1.0)
+            if target + period < time.time():  # vinduet er allerede slut — dødt
+                self.writer.put("sys", {"type": "f3_window_missed", "period": period,
+                                        "window_ts": target})
+            else:
+                if time.time() > target:
+                    self.writer.put("sys", {"type": "f3_window_late_spawn",
+                                            "period": period, "window_ts": target})
+                await self._spawn_window(period, target)
+            target += period
             self._feeds = [f for f in self._feeds if not f.should_stop()]
 
     def stop(self) -> None:

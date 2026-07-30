@@ -1,6 +1,6 @@
 # Backtest-rapport (M2) — BONESAW
 
-Genereret 2026-07-30T13:51:48Z af `research/backtest.py report`. Bootstrap-rapport til M2 (SPEC §4) — INGEN pass/fail-gate; det kommer først med Gate A (M3).
+Genereret 2026-07-30T16:23:45Z af `research/backtest.py report`. Bootstrap-rapport til M2 (SPEC §4) — INGEN pass/fail-gate; det kommer først med Gate A (M3).
 
 ## Datadækning
 
@@ -21,6 +21,8 @@ Model = binned empirisk + Laplace + isotonic (BRAIN v0). To baselines: konstant 
 
 ### BTC
 
+Fittet med `lag_s = [2]`.
+
 | Tau-bånd | n | Brier (model) | Brier (konstant 0,5) | Brier (train-base-rate) | Base-rate |
 |---|---|---|---|---|---|
 | 240-120 | 34788 | 0.19586 | 0.25000 | 0.25000 | 0.49941 |
@@ -30,6 +32,8 @@ Model = binned empirisk + Laplace + isotonic (BRAIN v0). To baselines: konstant 
 *(Base-rate ligger typisk meget tæt på 0,5 for 5m BTC/ETH-vinduer — derfor ligner de to baselines hinanden; det er i sig selv et empirisk fund, ikke en fejl i tabellen.)*
 
 ### ETH
+
+Fittet med `lag_s = [2]`.
 
 | Tau-bånd | n | Brier (model) | Brier (konstant 0,5) | Brier (train-base-rate) | Base-rate |
 |---|---|---|---|---|---|

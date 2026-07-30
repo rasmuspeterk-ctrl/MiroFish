@@ -7,12 +7,21 @@ from __future__ import annotations
 
 import enum
 import json
+import os
 import sys
 import time
 from pathlib import Path
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel as _PydanticBase
+from pydantic import ConfigDict, Field
+
+
+class BaseModel(_PydanticBase):
+    """AUDIT-fix: extra='forbid' — en fejlstavet/malplaceret config-nøgle skal
+    FEJLE ved load, ikke stille falde tilbage på pydantic-defaulten
+    (fejl-sikker default, SPEC §1.7; alle tærskler i config, §1.5)."""
+    model_config = ConfigDict(extra="forbid")
 
 
 class Mode(str, enum.Enum):
@@ -124,6 +133,26 @@ class Config(BaseModel):
 def load_config(path: str | Path) -> Config:
     raw = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
     return Config.model_validate(raw)
+
+
+def load_dotenv(path: str | Path) -> int:
+    """Minimal .env-læser (KEY=VAL per linje; #-kommentarer; eksisterende
+    miljøvariabler vinder). Bevidst uden ekstra dependency — hemmeligheder
+    bor KUN i .env, gitignored (SPEC §6). Returnerer antal satte nøgler."""
+    p = Path(path)
+    if not p.exists():
+        return 0
+    n = 0
+    for line in p.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, val = line.partition("=")
+        key, val = key.strip(), val.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = val
+            n += 1
+    return n
 
 
 ARM_MAX_AGE_S = 7 * 24 * 3600  # SPEC §7: ARM aeldre end 7 dage → exit(1)

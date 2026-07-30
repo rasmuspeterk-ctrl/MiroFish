@@ -65,7 +65,10 @@ def gap_stats(ts: np.ndarray, span: tuple[float, float], stale_s: float) -> dict
                 "max_gap_s": t1 - t0}
     points = np.concatenate(([t0], ts, [t1]))
     deltas = np.diff(points)
-    gaps = deltas[deltas > stale_s] - stale_s  # tid UDOVER taersklen taeller som gap
+    # AUDIT-fix: HELE stilheden taeller som gap naar den overskrider taersklen.
+    # Den gamle subtraktion (delta - stale_s) lod mange korte, reelle outages
+    # taelle ~0 og kunne goere en hakkende feed groen.
+    gaps = deltas[deltas > stale_s]
     total = float(gaps.sum())
     return {"n_msgs": int(ts.size), "gap_s": round(total, 1),
             "gap_pct": round(100 * total / max(t1 - t0, 1e-9), 4),
@@ -87,12 +90,14 @@ def main() -> int:
         print("Ingen events fundet — har recorderen kørt?", file=sys.stderr)
         return 1
     all_ts = np.concatenate(list(events.values()))
-    span = (float(all_ts.min()), float(all_ts.max()))
+    raw_end = float(all_ts.max())
+    span = (float(all_ts.min()), raw_end)
     # kontrolleret nedlukning: cap måle-vinduet ved SIDSTE recorder_stopping,
     # så teardown-halen ikke tælles som feed-gap (downtime mellem genstarter
     # midt i en soak tælles stadig — kun den afsluttende hale undtages)
     stopping = [e["ts_wall"] for e in special["sys"] if e.get("type") == "recorder_stopping"]
-    if stopping and span[1] - max(stopping) < 60:
+    clean_final_stop = bool(stopping and raw_end - max(stopping) < 60)
+    if clean_final_stop:
         span = (span[0], float(max(stopping)))
     span_s = span[1] - span[0]
     stale = cfg.feeds.stale_gap_s.model_dump()
@@ -138,9 +143,44 @@ def main() -> int:
     for e in special["sys"]:
         if e.get("type") == "ws_disconnect":
             disconnects[e.get("feed", "?")] = disconnects.get(e.get("feed", "?"), 0) + 1
-    last_stop = [e for e in special["sys"] if e.get("type") == "recorder_stop"]
-    dropped = last_stop[-1].get("dropped", 0) if last_stop else 0
-    verdicts.append(("ingen droppede events (kø-overløb)", dropped == 0, str(dropped)))
+
+    # AUDIT-fix: dropped/db_errors aggregeres PER KØRSELSSEGMENT (tællerne er
+    # kumulative per proces; supervisor-genstarter nulstiller dem). Den gamle
+    # "sidste recorder_stop eller 0" gjorde et crash-tab usynligt.
+    sys_sorted = sorted(special["sys"], key=lambda e: e["ts_wall"])
+    start_ts = [e["ts_wall"] for e in sys_sorted if e.get("type") == "recorder_start"]
+    n_clean_stops = sum(1 for e in sys_sorted if e.get("type") == "recorder_stop")
+    seg_dropped: dict[int, int] = {}
+    seg_dberr: dict[int, int] = {}
+    for e in sys_sorted:
+        if e.get("type") not in ("metrics", "recorder_stop"):
+            continue
+        seg = sum(1 for s in start_ts if s <= e["ts_wall"])  # segment-indeks
+        if "dropped" in e:
+            seg_dropped[seg] = max(seg_dropped.get(seg, 0), int(e.get("dropped") or 0))
+        if "db_errors" in e:
+            seg_dberr[seg] = max(seg_dberr.get(seg, 0), int(e.get("db_errors") or 0))
+    dropped = sum(seg_dropped.values())
+    db_errors = sum(seg_dberr.values())
+    verdicts.append(("ingen droppede events (kø-overløb, alle segmenter)",
+                     dropped == 0, str(dropped)))
+
+    # AUDIT-fix: en recorder der DØDE i halen må ikke fremstå grøn — kræv
+    # rent stop ELLER friske events ved rapport-tid
+    tail_age = time.time() - raw_end
+    verdicts.append(("recorder i live eller rent stoppet ved rapport-tid",
+                     clean_final_stop or tail_age < 300,
+                     "rent stop" if clean_final_stop else f"seneste event for {tail_age:.0f}s siden"))
+
+    # AUDIT-fix: S_open-dækning maalt mod FORVENTEDE vinduer fra spandet —
+    # aldrig-registrerede boundaries (død boundary-task) var usynlige før
+    if span_s > 600 and by_asset:
+        expected_per_asset = int(span_s // 300)
+        expected_total = expected_per_asset * len(by_asset)
+        registered_total = sum(v[0] + v[1] for v in by_asset.values())
+        verdicts.append((f"boundary-registrering ≥ 98% af forventede vinduer",
+                         registered_total >= 0.98 * expected_total,
+                         f"{registered_total}/{expected_total}"))
 
     green = all(ok for _, ok, _ in verdicts)
     gen = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
@@ -163,6 +203,12 @@ def main() -> int:
     if special["s_open_late"]:
         L.append(f"\nSene in-window-ticks efter UNPRICEABLE-afgørelse: "
                  f"{len(special['s_open_late'])} (vinduerne forblev unpriceable — fejlsikkert).")
+    n_starts = len(start_ts)
+    n_uncontrolled = max(0, n_starts - n_clean_stops - (0 if clean_final_stop or tail_age >= 300 else 1))
+    L += ["", "## Kørselssegmenter", "",
+          f"Processtarter: {n_starts} · rene stop: {n_clean_stops} · "
+          f"ukontrollerede stop (crash/kill): {n_uncontrolled} · "
+          f"db-fejl overlevet af writeren: {db_errors}"]
     L += ["", "## Disk-vagt", ""]
     L.append("Ingen disk-hændelser under kørslen." if not disk_evs else
              "\n".join(f"- {e['type']} @ {time.strftime('%H:%M:%SZ', time.gmtime(e['ts_wall']))} "

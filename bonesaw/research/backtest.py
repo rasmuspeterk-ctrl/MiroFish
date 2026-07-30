@@ -225,9 +225,11 @@ def consolidate_symbol(sym_upper: str, zips_dir: Path, out_dir: Path, *,
         return result
 
     frames = []
+    parsed_ok: list[Path] = []
     for fp in files:
         try:
             frames.append(read_kline_zip(fp))
+            parsed_ok.append(fp)
         except Exception as e:  # fejlsikker: en korrupt zip vælter ikke hele konsolideringen
             print(f"ADVARSEL [{asset}]: kunne ikke læse {fp.name}: {e}", file=sys.stderr)
     if not frames:
@@ -246,8 +248,14 @@ def consolidate_symbol(sym_upper: str, zips_dir: Path, out_dir: Path, *,
     result["out_path"] = str(out_path)
 
     if delete_zips:
-        for fp in files:
+        # AUDIT-fix: slet KUN zips der blev parset OK — en korrupt fil skal
+        # bevares så den kan re-downloades/undersøges, ikke destrueres
+        for fp in parsed_ok:
             fp.unlink()
+        n_kept = len(files) - len(parsed_ok)
+        if n_kept:
+            print(f"ADVARSEL [{asset}]: {n_kept} fejlede zips BEHOLDT trods --delete-zips",
+                  file=sys.stderr)
 
     return result
 
@@ -540,6 +548,7 @@ def fit_symbol(klines_df: pd.DataFrame, cfg, lag_s: int) -> dict:
 
     df = pd.DataFrame(rows, columns=["ts0", "tau", "delta_bn_bp", "delta_or_bp", "rv60", "label"])
     df["band"] = df["tau"].map(tau_band)
+    df["lag_s"] = lag_s  # proveniens (AUDIT-fix): rapporten viser det lag der FITTEDES med
 
     n_train_windows = max(1, int(round(0.8 * n_windows)))
     train_ts0 = set(window_ts0[:n_train_windows])
@@ -790,6 +799,15 @@ def cmd_report(args) -> int:
             lines.append("")
             continue
         any_windows = True
+        # proveniens (AUDIT-fix): tallene tilhører det lag fittet brugte —
+        # ikke nødvendigvis det aktuelle oracle_lag.json
+        if "lag_s" in wdf.columns:
+            fitted_lags = sorted(set(int(x) for x in wdf["lag_s"].unique()))
+            lines.append(f"Fittet med `lag_s = {fitted_lags}`."
+                         + (f" **ADVARSEL:** aktuelt kalibreret lag er {lag_info['lag_s']} — "
+                            "genkør `fit` for at opdatere tallene."
+                            if fitted_lags != [int(lag_info['lag_s'])] else ""))
+            lines.append("")
         ev = evaluate_windows(wdf, min_bin_n)
         lines += ["| Tau-bånd | n | Brier (model) | Brier (konstant 0,5) | "
                   "Brier (train-base-rate) | Base-rate |",

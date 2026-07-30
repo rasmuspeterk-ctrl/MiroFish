@@ -46,14 +46,20 @@ class WsFeed:
     def sys_event(self, type_: str, **kw) -> None:
         self.writer.put("sys", {"type": type_, "feed": self.name, **kw})
 
+    HEALTHY_CONN_S = 30.0  # forbindelse skal leve saa laenge foer backoff nulstilles
+
     async def run(self) -> None:
         backoff = self.reconnect_base_s
         while not self.should_stop():
+            connected_at = None
             try:
                 async with websockets.connect(self.url, open_timeout=15,
                                               max_size=2**23) as ws:
                     self.sys_event("ws_connect", url=self.url)
-                    backoff = self.reconnect_base_s
+                    # AUDIT-fix: backoff nulstilles IKKE ved handshake alene —
+                    # en server der accepterer og straks lukker ville ellers
+                    # give en 1-2 Hz reconnect-storm. Se except-grenen.
+                    connected_at = time.monotonic()
                     await self.on_open(ws)
                     next_ping = time.monotonic() + (self.ping_interval_s or 1e12)
                     while not self.should_stop():
@@ -79,6 +85,9 @@ class WsFeed:
                     break
                 self.sys_event("ws_disconnect", error=str(e)[:300])
                 log.warning("ws_disconnect", feed=self.name, error=str(e)[:120])
+                if connected_at is not None and \
+                        time.monotonic() - connected_at >= self.HEALTHY_CONN_S:
+                    backoff = self.reconnect_base_s  # sund forbindelse gik ned: frisk start
                 await asyncio.sleep(backoff + random.uniform(0, backoff / 2))
                 backoff = min(backoff * 2, self.reconnect_max_s)
         self.sys_event("ws_stopped")

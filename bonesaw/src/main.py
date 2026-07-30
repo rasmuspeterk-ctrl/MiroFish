@@ -22,7 +22,7 @@ from . import clock
 from .feeds.f1_rtds import F1Rtds, SOpenTracker
 from .feeds.f2_binance import F2Binance
 from .feeds.f3_clob import F3Manager
-from .modes import Config, Mode, check_gates, load_config
+from .modes import Config, Mode, check_gates, load_config, load_dotenv
 from .recorder import EventWriter, GapTracker, rss_mb
 from .uploader import run_uploader
 
@@ -40,15 +40,30 @@ def _setup_logging() -> None:
     ])
 
 
-async def _boundary_task(tracker: SOpenTracker, periods: list[int]) -> None:
-    while True:
-        waits = [(clock.next_boundary(p) - REGISTER_LEAD_S - time.time(), p) for p in periods]
-        wait_s, period = min(waits)
-        if wait_s > 0:
-            await asyncio.sleep(wait_s)
-        boundary = clock.next_boundary(period)
-        tracker.register_boundary(period, boundary)
-        await asyncio.sleep(max(0.0, boundary - time.time()) + 0.5)
+async def _boundary_task(tracker: SOpenTracker, writer: EventWriter,
+                         periods: list[int]) -> None:
+    # AUDIT-fix: én løkke PER periode (gather) med eksplicit target — den gamle
+    # min()-multiplex registrerede kun ÉN periode ved sammenfaldende 5m/15m-
+    # boundaries. For sen registrering (efter gap-vinduet) ville give falske
+    # UNPRICEABLE — så den springes over MED sys-event i stedet.
+    async def per_period(period: int) -> None:
+        target = clock.next_boundary(period)
+        while True:
+            wait_s = target - REGISTER_LEAD_S - time.time()
+            if wait_s > 0:
+                await asyncio.sleep(wait_s)
+            if time.time() <= target + tracker.gap_s:
+                tracker.register_boundary(period, target)
+            else:
+                writer.put("sys", {"type": "boundary_registration_missed",
+                                   "period": period, "window_ts": target})
+            target += period
+            while target + tracker.gap_s < time.time():  # indhent efter lang stall
+                writer.put("sys", {"type": "boundary_registration_missed",
+                                   "period": period, "window_ts": target})
+                target += period
+
+    await asyncio.gather(*(per_period(p) for p in periods))
 
 
 async def _watchdog_task(tracker: SOpenTracker) -> None:
@@ -66,7 +81,7 @@ async def _metrics_task(writer: EventWriter, gaps: GapTracker, data_dir: Path,
         writer.put("sys", {
             "type": "metrics", "rss_mb": rss_mb(), "qsize": writer.q.qsize(),
             "dropped": writer.dropped, "dropped_disk": writer.dropped_disk,
-            "disk_halted": writer.disk_halted,
+            "db_errors": writer.db_errors, "disk_halted": writer.disk_halted,
             "free_gb": round(shutil.disk_usage(data_dir).free / 1e9, 2),
             "beat_age_s": beats})
 
@@ -103,12 +118,17 @@ async def run_record(cfg: Config, duration_s: float | None) -> None:
         asyncio.create_task(f1.run(), name="f1"),
         asyncio.create_task(f2.run(), name="f2"),
         asyncio.create_task(f3.run(), name="f3-manager"),
-        asyncio.create_task(_boundary_task(tracker, pers), name="boundaries"),
+        asyncio.create_task(_boundary_task(tracker, writer, pers), name="boundaries"),
         asyncio.create_task(_watchdog_task(tracker), name="watchdog"),
         asyncio.create_task(_metrics_task(writer, gaps, data_dir,
                                           cfg.recorder.metrics_interval_s), name="metrics"),
     ]
     if cfg.recorder.supabase_upload:
+        # AUDIT-fix: supabase_upload=true uden noegler var en STILLE no-op
+        import os as _os
+        if not (_os.environ.get("SUPABASE_URL") and _os.environ.get("SUPABASE_KEY")):
+            log.warning("supabase_upload er slaaet TIL i config, men SUPABASE_URL/"
+                        "SUPABASE_KEY mangler i miljoeet (.env) — uploader bliver no-op")
         tasks.append(asyncio.create_task(
             run_uploader(PROJECT_ROOT / cfg.recorder.sqlite_file,
                          cfg.recorder.supabase_table), name="uploader"))
@@ -150,6 +170,7 @@ def main() -> int:
                     help="stop automatisk efter N sekunder (smoke/soak-styring)")
     args = ap.parse_args()
     _setup_logging()
+    load_dotenv(PROJECT_ROOT / ".env")  # hemmeligheder KUN via .env (SPEC §6)
     cfg = load_config(args.config)
 
     if cfg.mode is Mode.LIVE:

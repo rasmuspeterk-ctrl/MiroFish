@@ -8,6 +8,7 @@ Fejlsikker default (SPEC §1.7): overløb droppes og TÆLLES frem for at blokere
 from __future__ import annotations
 
 import json
+import os
 import queue
 import shutil
 import sqlite3
@@ -69,6 +70,8 @@ class EventWriter:
         self.on_rotate = on_rotate            # callback(hour_ts, stats_rows) efter rotation
         self.q: queue.Queue[Event] = queue.Queue(maxsize=queue_max)
         self.dropped = 0                       # overloeb (fejlsikker: aldrig blokere hot path)
+        self.db_errors = 0                     # db-flush-fejl overlevet (synlig i metrics)
+        self._db_error_streak = 0
         self.disk_halted = False
         self.dropped_disk = 0
         self._stop = threading.Event()
@@ -97,10 +100,16 @@ class EventWriter:
         self._thread.start()
         self._rot_thread.start()
 
-    def stop(self, timeout: float = 30.0) -> None:
+    def stop(self, timeout: float = 60.0) -> None:
         self._stop.set()
         self._thread.join(timeout=timeout)
         self._rot_thread.join(timeout=timeout)
+        # AUDIT-fix: opgivet join må ikke være STILLE — daemon-tråde fryses ved
+        # exit, og et efterladt backlog skal være synligt i loggen
+        if self._thread.is_alive():
+            log.error("writer_traad_stadig_i_live_ved_stop", qsize=self.q.qsize())
+        if self._rot_thread.is_alive():
+            log.error("rotations_traad_stadig_i_live_ved_stop")
 
     # ---------------------------------------------------------------- intern
 
@@ -117,29 +126,61 @@ class EventWriter:
         con = self._connect()
         buf: list[Event] = []
         last_flush = time.monotonic()
+        db_retry_at = 0.0
         while not (self._stop.is_set() and self.q.empty() and not buf):
-            timeout = max(0.01, self.flush_ms / 1000 - (time.monotonic() - last_flush))
-            try:
-                buf.append(self.q.get(timeout=timeout))
-                while len(buf) < self.batch_max:
-                    buf.append(self.q.get_nowait())
-            except queue.Empty:
-                pass
             now = time.monotonic()
-            if buf and (len(buf) >= self.batch_max
+            if len(buf) < self.batch_max and now >= db_retry_at:
+                timeout = max(0.01, self.flush_ms / 1000 - (now - last_flush))
+                try:
+                    buf.append(self.q.get(timeout=timeout))
+                    while len(buf) < self.batch_max:
+                        buf.append(self.q.get_nowait())
+                except queue.Empty:
+                    pass
+            else:
+                # buf fuld eller db i backoff: traek ikke mere fra koeen — den
+                # absorberer (200k) og overloeb TAELLES i stedet for at buf
+                # vokser ubegraenset mod en syg database
+                time.sleep(min(0.2, max(0.01, db_retry_at - now)))
+            now = time.monotonic()
+            if buf and now >= db_retry_at and (len(buf) >= self.batch_max
                         or now - last_flush >= self.flush_ms / 1000 or self._stop.is_set()):
-                con.executemany(
-                    "INSERT INTO events (ts_mono, ts_wall, source, payload) VALUES (?,?,?,?)",
-                    [(e.ts_mono, e.ts_wall, e.source,
-                      json.dumps(e.payload, separators=(",", ":"), ensure_ascii=False))
-                     for e in buf])
-                con.commit()
-                buf.clear()
+                try:
+                    con.executemany(
+                        "INSERT INTO events (ts_mono, ts_wall, source, payload) VALUES (?,?,?,?)",
+                        [(e.ts_mono, e.ts_wall, e.source,
+                          json.dumps(e.payload, separators=(",", ":"), ensure_ascii=False))
+                         for e in buf])
+                    con.commit()
+                    buf.clear()
+                    self._db_error_streak = 0
+                except sqlite3.Error as e:
+                    # AUDIT-fix (critical): én OperationalError (fx 'database is
+                    # locked' under rotationens WAL-checkpoint) må ALDRIG dræbe
+                    # writer-tråden. Behold buf (re-flushes), rollback, backoff.
+                    try:
+                        con.rollback()
+                    except sqlite3.Error:
+                        pass
+                    self.db_errors += 1
+                    self._db_error_streak += 1
+                    db_retry_at = now + min(5.0, 0.5 * 2 ** min(self._db_error_streak, 4))
+                    log.error("db_flush_fejl", error=str(e)[:200], buffered=len(buf),
+                              streak=self._db_error_streak)
+                    if self._stop.is_set() and self._db_error_streak >= 3:
+                        self.dropped += len(buf)  # sidste udvej ved nedlukning: tab TALT
+                        buf.clear()
                 last_flush = now
             if now - self._last_disk_check >= self.disk_check_s:
                 self._last_disk_check = now
-                self._disk_guard(con)
-        con.commit()
+                try:
+                    self._disk_guard(con)
+                except sqlite3.Error as e:
+                    log.error("disk_guard_db_fejl", error=str(e)[:200])
+        try:
+            con.commit()
+        except sqlite3.Error:
+            pass
         con.close()
 
     def _rotation_loop(self) -> None:
@@ -195,10 +236,18 @@ class EventWriter:
         return all_stats
 
     def _rotate_hour(self, con: sqlite3.Connection, hour_ts: int) -> list[tuple]:
-        """Chunked streaming: SELECT-chunk → parquet-row-group → DELETE-chunk.
+        """Chunked streaming med crash-sikker rækkefølge (AUDIT-fix, critical):
 
-        Holder RAM bunden (chunk-størrelse) og WAL-låsen kort per chunk, så
-        writer-tråden kun venter millisekunder ad gangen (busy_timeout).
+          1. SELECT-chunks via id-CURSOR (id > last_id) → parquet-row-groups
+             i en .tmp-fil — INGEN sletning undervejs.
+          2. Når hele timen er skrevet: close() (footer), fsync, atomisk
+             os.replace(.tmp → endelig fil), fsync af mappen.
+          3. FØRST DEREFTER chunkede DELETEs (korte WAL-låse).
+
+        Dør processen på et vilkårligt tidspunkt før (3), står alle rækker
+        stadig i SQLite og næste rotation genskriver .tmp-filen idempotent —
+        den endelige fil åbnes ALDRIG i write-mode, så en tidligere komplet
+        rotation kan ikke trunkeres af en genkørsel.
         """
         import pyarrow as pa
         import pyarrow.parquet as pq
@@ -208,15 +257,17 @@ class EventWriter:
         out_dir = self.parquet_dir / day
         out_dir.mkdir(parents=True, exist_ok=True)
         out = out_dir / f"events_{day}_{hh}.parquet"
+        tmp = out_dir / f"events_{day}_{hh}.parquet.tmp"
         writer: pq.ParquetWriter | None = None
         stats: dict[str, list[int]] = {}
         total = 0
+        last_id = 0
         try:
             while True:
                 sel = con.execute(
                     "SELECT id, ts_mono, ts_wall, source, payload FROM events "
-                    "WHERE ts_wall >= ? AND ts_wall < ? ORDER BY id LIMIT ?",
-                    (hour_ts, hour_ts + 3600, self.rotate_chunk_rows)).fetchall()
+                    "WHERE id > ? AND ts_wall >= ? AND ts_wall < ? ORDER BY id LIMIT ?",
+                    (last_id, hour_ts, hour_ts + 3600, self.rotate_chunk_rows)).fetchall()
                 if not sel:
                     break
                 table = pa.table({
@@ -226,21 +277,36 @@ class EventWriter:
                     "payload": pa.array([r[4] for r in sel], pa.string()),
                 })
                 if writer is None:
-                    writer = pq.ParquetWriter(out, table.schema, compression="zstd")
+                    writer = pq.ParquetWriter(tmp, table.schema, compression="zstd")
                 writer.write_table(table)
                 for _, _, _, source, payload in sel:
                     s = stats.setdefault(source, [0, 0])
                     s[0] += 1
                     s[1] += len(payload)
                 total += len(sel)
-                con.execute("DELETE FROM events WHERE id <= ? AND ts_wall >= ? AND ts_wall < ?",
-                            (sel[-1][0], hour_ts, hour_ts + 3600))
-                con.commit()
+                last_id = sel[-1][0]
         finally:
             if writer is not None:
                 writer.close()
         if not total:
+            tmp.unlink(missing_ok=True)
             return []
+        with open(tmp, "rb") as fh:
+            os.fsync(fh.fileno())
+        os.replace(tmp, out)
+        dfd = os.open(out_dir, os.O_RDONLY)
+        try:
+            os.fsync(dfd)
+        finally:
+            os.close(dfd)
+        while True:  # sletning EFTER holdbar fil; chunket for korte laase
+            cur = con.execute(
+                "DELETE FROM events WHERE id IN (SELECT id FROM events WHERE id <= ? "
+                "AND ts_wall >= ? AND ts_wall < ? LIMIT ?)",
+                (last_id, hour_ts, hour_ts + 3600, self.rotate_chunk_rows))
+            con.commit()
+            if cur.rowcount < self.rotate_chunk_rows:
+                break
         stat_rows = [(hour_ts, src, n, b) for src, (n, b) in sorted(stats.items())]
         con.executemany(
             "INSERT OR REPLACE INTO hourly_stats (hour_ts, source, n, bytes) VALUES (?,?,?,?)",
