@@ -1,0 +1,75 @@
+# BONESAW v1 — alle tærskler bor her (SPEC §1.5). Ingen magiske tal i kode.
+# Defaults fra SPEC §5; alle kan overstyres.
+
+mode: RECORD                # RECORD | SHADOW | LIVE
+assets_record: [btc, eth, sol, xrp, doge, bnb]
+asset_live: null            # sættes af asset_decision.md ved M4
+enable_15m: false
+
+brain:
+  min_bin_n: 200            # under dette: ingen entry
+  rv_halflife_s: 60
+
+hands:
+  edge_min: 0.02            # 2 cent netto foer entry
+  pairing_edge_min: 0.005
+  pairing_max_s: 60
+  oneside_cap_usdc: 25
+  ratio_min: 1.5            # hans laek: aldrig 1.0-1.5x
+  ratio_max: 8.0
+  paired_cost_max: 1.03     # ideal < 1.00 — se VERIFIED.md §3.3: ex-fee-maal, forudsaetter maker-legging
+  probe_max_usdc: 10
+  endgame_cutoff_s: 20
+  endgame_edge_min: 0.08
+
+fuses:
+  daily_loss_pct: 5
+  oracle_div_bp: 10
+  oracle_div_s: 5
+  market_cap_usdc: 50
+  blackout_min: 10
+  staleness_ms: 1500
+
+redeemer:
+  redeem_poll_s: 60
+  redeem_backlog_max_usdc: 200
+
+execution:
+  latency_penalty_ms: [250, 500]   # shadow-straf, interval
+
+recorder:
+  data_dir: data
+  sqlite_file: data/recorder.sqlite
+  flush_ms: 200
+  batch_max: 2000             # f2/bookTicker alene er ~1,5k msg/s — batches skal foelge med
+  queue_max: 200000           # fejlsikker: overloeb droppes+taelles, blokerer aldrig
+  rotate_check_s: 20
+  rotate_chunk_rows: 100000   # rotation streames i chunks i egen traad
+  disk_min_free_gb: 5         # SPEC §2: stop ved <5 GB fri
+  disk_resume_free_gb: 6
+  disk_check_s: 30
+  metrics_interval_s: 60
+  supabase_upload: false      # valgfri (SPEC M1); kraever SUPABASE_URL/KEY i .env
+  supabase_table: bonesaw_hourly_stats
+
+feeds:
+  f1_url: wss://ws-live-data.polymarket.com
+  f1_topic: crypto_prices_chainlink
+  f1_ping_s: 5                # RTDS app-heartbeat (VERIFIED.md §4.3)
+  s_open_gap_s: 2.0           # SPEC §2 F1 gap-regel: [boundary, boundary+2s] (ORACLE-ts)
+  s_open_grace_ms: 3000       # vaeg-urs-deadline = boundary+gap+grace; RTDS-leveringslag
+                              # maalt (smoke): median 1,6s / p99 2,6s / maks 3,0s → 3s grace
+  f2_url: wss://fstream.binance.com/stream
+  f2_streams: [bookTicker, aggTrade, forceOrder, depth@100ms]
+  f3_url: wss://ws-subscriptions-clob.polymarket.com/ws/market
+  f3_ping_s: 10               # CLOB-WS app-heartbeat (docs)
+  f3_connect_lead_s: 30
+  f3_linger_s: 30
+  gamma_url: https://gamma-api.polymarket.com
+  reconnect_base_s: 0.5
+  reconnect_max_s: 30
+  stale_gap_s: {f1: 5, f2: 5, f3: 15}
+
+soak:
+  gap_pct_max: 0.1            # SPEC M1 DoD: <0,1% gap-tid
+  mem_growth_max_pct: 15
